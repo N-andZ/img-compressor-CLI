@@ -7,10 +7,36 @@ import sharp from 'sharp';
 import { buffer } from 'stream/consumers';
 const require = createRequire(import.meta.url);
 var fs = require('fs');
+var  operatingSystem = process.platform;
+
+// function getPathSeperator (){
+  // switch(operatingSystem){
+  //   case "linux":
+  //     return "/";
+  //   case "win32":
+  //     return "\\";
+
+  // }
+// }
+
+const getPathSeperator = () => {
+  switch(operatingSystem){
+    case "linux":
+      return "/";
+    case "win32":
+      return "\\";
+
+  }
+}
+
+
+
+
+let pathSeperator = getPathSeperator();
 
 export default class ImagemodResize extends Command {
   static override args = {
-    // dimensions: Args.string({name: 'dimensions' ,description: 'file to read'}),
+    dimensions: Args.string({name: 'dimensions' ,description: 'file to read'}),
     path: Args.string({name: 'path to folder', description: 'path to files'})
   }
 
@@ -31,12 +57,16 @@ export default class ImagemodResize extends Command {
     
     const {args} = await this.parse(ImagemodResize)
     const pathName = args.path;
-    const destinationFolderPath: string = `${pathName}\\target`
+    const dimensions: Array<string> | undefined = args.dimensions?.split("x");
+    const width: number = dimensions ? Number(dimensions[0]) : 0;
+    const height: number = dimensions ? Number(dimensions[1]) : 0; 
+    
+    // console.log(operatingSystem);
 
+    const destinationFolderPath: string = `${pathName}${pathSeperator}target`
+    // console.log("Destination: " + pathSeperator);
     // this.log(`running:  + ${args.dimensions} , ${args.path}`);
-    this.log('Creating Destination Folder');
-    // Create the destination folder for the changed images
-    // mkdir(destinationFolderPath, {recursive: true});
+
 
     this.log(`Resizing images`);
     const bufferArray = await getImageBuffers(pathName);
@@ -49,8 +79,10 @@ export default class ImagemodResize extends Command {
       let i = 0;
       for (const image of bufferArray){
         i++;
-        console.log(image);
-        await sharp (image).toFile(`${destinationFolderPath}\\test-${i}.jpg`);
+        // console.log(image);
+        await sharp (image)
+        .resize(width, height, {fit: 'inside'})
+        .toFile(`${destinationFolderPath + pathSeperator}test-${i}.jpg`);
       }
     }
 
@@ -63,16 +95,15 @@ export default class ImagemodResize extends Command {
 
 async function getImageBuffers (folderPath: string | undefined){
   let bufferArray: Array<any> = []; 
-  // let fileNames: Array<string> = [];
   if (folderPath){
     try{
       const imageNames = await fs.promises.readdir(folderPath);
-      console.log(imageNames);
+      // console.log(imageNames);
       for (const imageName of imageNames){
-        const imageData = await fs.promises.readFile( `${folderPath}\\${imageName}`);
+        const imageData = await fs.promises.readFile( `${folderPath + pathSeperator + imageName}`);
         bufferArray.push(imageData);
       }
-      console.log(bufferArray);
+      // console.log(bufferArray);
       return bufferArray;
     }
     catch(err){
