@@ -30,8 +30,9 @@ export default class ImagemodResize extends Command {
     const {args} = await this.parse(ImagemodResize)
     // this.log(`running:  + ${args.dimensions} , ${args.path}`);
     this.log(`Resizing images`)
-    await resizeImages(args.path);
-
+    // await resizeImages(args.path);
+    const buff = await fs.promises.readFile(args.path);
+    await sharp(buff).toFile('test.jpg');
 
 
 
@@ -43,35 +44,3 @@ export default class ImagemodResize extends Command {
   }
 }
 
-
-async function resizeImages(path: string | undefined){
-  try{
-    if (path){
-      fs.readdir(path, (er: any,files: any)=>{
-        files.forEach(async ({file}:{file: any}) => {
-          const imageData = fs.readFile(file, (err: any,data: any)=>{
-            if (err) throw err;
-            return data;
-          })
-          return await resizeAlgorithm(imageData);
-        });
-      });
-     
-    }
-  
-
-  }
-  catch (err){
-    console.log(err);
-  }
-}
-
-async function resizeAlgorithm(input:string){
-  console.log("running resizing alg");
-  let transformer = sharp(input)
-  .resize(900,900)
-  .toFile('output.jpg', function(err){
-    console.log(err);
-  })
-  return transformer;
-}
